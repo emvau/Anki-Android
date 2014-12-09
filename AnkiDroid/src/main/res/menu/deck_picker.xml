@@ -51,4 +51,8 @@
         android:id="@+id/action_export"
         android:menuCategory="secondary"
         android:title="@string/export"/>
+    <item
+        android:id="@+id/action_evernoteSync"
+        android:menuCategory="secondary"
+        android:title="@string/menu_evernoteSync"/>
 </menu>

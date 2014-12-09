@@ -19,6 +19,7 @@
 
 package com.ichi2.anki;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -56,6 +57,9 @@ import com.ichi2.themes.StyledDialog;
 import com.ichi2.themes.StyledProgressDialog;
 import com.ichi2.themes.Themes;
 import com.ichi2.utils.LanguageUtil;
+
+import com.ichi2.anki.EvernoteSync;
+import com.evernote.client.android.EvernoteSession;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -103,12 +107,15 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
     private static String[] sShowValueInSummSeek = { "relativeDisplayFontSize", "relativeCardBrowserFontSize",
             "relativeImageSize", "answerButtonSize", "whiteBoardStrokeWidth", "swipeSensitivity",
             "timeoutAnswerSeconds", "timeoutQuestionSeconds", "backupMax", "dayOffset" };
-    private static String[] sShowValueInSummEditText = { "simpleInterfaceExcludeTags", "deckPath" };
+    private static String[] sShowValueInSummEditText = { "simpleInterfaceExcludeTags", "deckPath","evernoteSync_SearchString" };
     private static String[] sShowValueInSummNumRange = { "timeLimit", "learnCutoff" };
     private TreeMap<String, String> mListsToUpdate = new TreeMap<String, String>();
     private StyledProgressDialog mProgressDialog;
     private boolean lockCheckAction = false;
     private String dialogMessage;
+
+    private Preference evernoteSync;
+    private EditTextPreference evernoteSync_SearchString;
 
     // Used for calculating dayOffset
     private Calendar mStartDate;
@@ -150,6 +157,9 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
         useCurrent = (ListPreference) getPreferenceScreen().findPreference("useCurrent");
         newSpread = (ListPreference) getPreferenceScreen().findPreference("newSpread");
         dayOffset = (SeekBarPreference) getPreferenceScreen().findPreference("dayOffset");
+        evernoteSync = (Preference) getPreferenceScreen().findPreference("evernoteSync");
+        evernoteSync_SearchString = (EditTextPreference) getPreferenceScreen().findPreference("evernoteSync_SearchString");
+
         // Workaround preferences
         PreferenceCategory workarounds = (PreferenceCategory) getPreferenceScreen().findPreference("category_workarounds");
         inputWorkaround = (CheckBoxPreference) getPreferenceScreen().findPreference("inputWorkaround");
@@ -294,6 +304,28 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
         }
         // Handle notification preference separately
         updateNotificationPreference();
+
+        if (EvernoteSync.getInstance(this).eSession.isLoggedIn()) {
+            // SharedPreferences preferences = AnkiDroidApp.getSharedPrefs(getBaseContext());
+            String evernoteSync_Username = preferences.getString("evernoteSync_Username", "unknown");
+            evernoteSync.setSummary(getString(R.string.evernoteSync_logged_in, evernoteSync_Username));
+            evernoteSync.setTitle(getString(R.string.evernoteSync_logout));
+        }
+        evernoteSync.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                if(preference.getTitle().equals("Login")){
+                    EvernoteSync.getInstance(preference.getContext()).login();
+                }
+                else {
+                    EvernoteSync.getInstance(preference.getContext()).logout();
+                    evernoteSync.setSummary(getString(R.string.evernoteSync_logged_out));
+                    evernoteSync.setTitle(getString(R.string.evernoteSync_login));
+                }
+                return false;
+            }
+        });
     }
 
 
@@ -548,6 +580,10 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
                 mCol.setMod();
             } else if (key.equals("minimumCardsDueForNotification")) {
                 updateNotificationPreference();
+            } else if (key.equals("evernoteSync_SearchString")) {
+                SharedPreferences preferences = AnkiDroidApp.getSharedPrefs(getBaseContext());
+                String tags = preferences.getString("evernoteSync_SearchString", "None");
+                evernoteSync_SearchString.setSummary(getString(R.string.evernoteSync_SearchString_list, tags));
             }
             
             if (Arrays.asList(sShowValueInSummList).contains(key)) {
@@ -688,4 +724,20 @@ public class Preferences extends PreferenceActivity implements OnSharedPreferenc
             
         }
     };
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+
+        if (requestCode == EvernoteSession.REQUEST_CODE_OAUTH){
+            if (resultCode == Activity.RESULT_OK) {
+                new EvernoteSync.updateUsername(this).execute();
+                finish();
+            }
+            else if(resultCode == Activity.RESULT_CANCELED)
+            {
+                Toast.makeText(this, "Evernote: Login failed",Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
 }

@@ -79,6 +79,17 @@
                 android:key="widgetBlink"
                 android:title="@string/notification_minimum_cards_due_blink" />
         </PreferenceCategory>
+        <PreferenceCategory android:title="@string/pref_cat_evernoteSync">
+            <Preference
+                android:key="evernoteSync"
+                android:title="@string/evernoteSync_login"
+                android:summary="@string/evernoteSync_logged_out"/>
+            <EditTextPreference
+                android:key="evernoteSync_SearchString"
+                android:title="@string/evernoteSync_SearchString_title"
+                android:summary="@string/evernoteSync_SearchString_list"
+                android:defaultValue="review=tag:review;" />
+        </PreferenceCategory>
     </PreferenceScreen>
 
     <!-- Reviewing Preferences -->

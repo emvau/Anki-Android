@@ -92,6 +92,9 @@ import com.ichi2.themes.StyledProgressDialog;
 import com.ichi2.themes.Themes;
 import com.ichi2.widget.WidgetStatus;
 
+import com.ichi2.anki.EvernoteSync;
+import com.evernote.client.android.EvernoteSession;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -506,6 +509,13 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
         menu.findItem(R.id.action_check_database).setEnabled(sdCardAvailable);
         menu.findItem(R.id.action_check_media).setEnabled(sdCardAvailable);
 
+        // TODO only activate if logged in
+        // menu.findItem(R.id.action_evernoteSync).setEnabled(sdCardAvailable);
+        //if (EvernoteSync.getInstance(this).eSession.isLoggedIn()) {
+        //    item = menu.add(Menu.NONE, MENU_EVERNOTESYNC, Menu.NONE, R.string.menu_evernoteSync);
+        //    item.setIcon(R.drawable.ic_menu_preferences);
+        //}
+
         // Show the welcome screen here if col empty to be sure that the action bar exists
         if (mShowShowcaseView && colOpen() && getCol().isEmpty()) {
             mShowShowcaseView = false;
@@ -623,6 +633,10 @@ public class DeckPicker extends NavigationDrawerActivity implements OnShowcaseEv
             case R.id.action_export:
                 String msg = getResources().getString(R.string.confirm_apkg_export);
                 showDialogFragment(ExportDialog.newInstance(msg));
+                return true;
+
+            case R.id.action_evernoteSync:
+                EvernoteSync.getInstance(this).sync();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
